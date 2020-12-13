@@ -1,6 +1,6 @@
 Featurelink = ('https://tinyurl.com/y3hex46c')
 Buglink = ('https://tinyurl.com/yy4o4rgc')
-version = ('1.0 beta')
+version = ('0.1 beta')
 from time import sleep
 while True:
 
