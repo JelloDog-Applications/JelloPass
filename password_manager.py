@@ -20,7 +20,7 @@ def check_updates():
             f"A new version {remote_version} is available. Do you want to update? (y/n): ")
         if update == 'y':
             # Download the new version of the script
-            update_url = "https://raw.githubusercontent.com/Sharkrider120/password_manager/main/password%20manager.py"
+            update_url = "https://raw.githubusercontent.com/Sharkrider120/password_manager/main/passwor_manager.py"
             updated_script = requests.get(update_url).text
             with open("password_manager.py", "w") as f:
                 f.write(updated_script)
