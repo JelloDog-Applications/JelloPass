@@ -8,21 +8,21 @@ cipher = Fernet(key)
 
 Featurelink = ('https://tinyurl.com/y3hex46c')
 Buglink = ('https://tinyurl.com/yy4o4rgc')
-version = ('0.2 beta')
+version = ('v1.0.0')
 
 
 def check_updates():
     # Check the version of the script on the remote repository
-    version_url = "https://raw.githubusercontent.com/Sharkrider120/password_manager/version-1/version.txt"
+    version_url = "https://raw.githubusercontent.com/Sharkrider120/password_manager/main/version.txt"
     remote_version = requests.get(version_url).text.strip()
     if remote_version != version:
         update = input(
             f"A new version {remote_version} is available. Do you want to update? (y/n): ")
         if update == 'y':
             # Download the new version of the script
-            update_url = "https://raw.githubusercontent.com/username/repository/master/script.py"
+            update_url = "https://raw.githubusercontent.com/Sharkrider120/password_manager/main/password%20manager.py"
             updated_script = requests.get(update_url).text
-            with open("script.py", "w") as f:
+            with open("password_manager.py", "w") as f:
                 f.write(updated_script)
             print("Update successful, please restart the script.")
             exit()
