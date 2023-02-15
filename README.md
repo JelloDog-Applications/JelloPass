@@ -1,4 +1,4 @@
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/JelloDog-Applications/password_manager?color=green)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/JelloDog-Applications/JelloPass?color=green)
 
 
 
