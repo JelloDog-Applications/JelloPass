@@ -1,6 +1,12 @@
 from time import sleep
 import requests
 from cryptography.fernet import Fernet
+import os
+
+# Create an encrypted folder for the passwords
+encrypted_folder = "encrypted"
+if not os.path.exists(encrypted_folder):
+    os.mkdir(encrypted_folder)
 
 # Generate a new key or load an existing one
 key_filename = "jellopass.key"
@@ -50,13 +56,13 @@ while True:
             print("Please go to this link to report a bug " + Buglink)
 
         if help_com == ("About"):
-            print("JelloPass By Cody Wagner " + version)
+            print("JelloPass Was Made By JelloDog-Applications " + version)
 
     if session == "open":
         pass_open = input("What is the name of the password?:\n")
 
         # Read the encrypted password from the file
-        with open(pass_open, "rb") as f:
+        with open(os.path.join(encrypted_folder, pass_open), "rb") as f:
             encrypted_password = f.read()
 
         # Decrypt the password
@@ -71,6 +77,6 @@ while True:
         # Encrypt the password
         encrypted_password = cipher.encrypt(password.encode())
 
-        # Write the encrypted password to a file
-        with open(new_name, "wb") as f:
+        # Write the encrypted password to a file in the encrypted folder
+        with open(os.path.join(encrypted_folder, new_name), "wb") as f:
             f.write(encrypted_password)
