@@ -2,13 +2,20 @@ from time import sleep
 import requests
 from cryptography.fernet import Fernet
 
-# Generate a new key
-key = Fernet.generate_key()
+# Generate a new key or load an existing one
+key_filename = "jellopass.key"
+try:
+    with open(key_filename, "rb") as key_file:
+        key = key_file.read()
+except FileNotFoundError:
+    key = Fernet.generate_key()
+    with open(key_filename, "wb") as key_file:
+        key_file.write(key)
 cipher = Fernet(key)
 
 Featurelink = ('https://tinyurl.com/y3hex46c')
 Buglink = ('https://tinyurl.com/yy4o4rgc')
-version = ('v1.0.0')
+version = ('v2.0.1')
 
 
 def check_updates():
@@ -22,7 +29,7 @@ def check_updates():
             # Download the new version of the script
             update_url = "https://raw.githubusercontent.com/Sharkrider120/password_manager/main/password_manager.py"
             updated_script = requests.get(update_url).text
-            with open("password_manager.py", "w") as f:
+            with open("JelloPass.py", "w") as f:
                 f.write(updated_script)
             print("Update successful, please restart the script.")
             exit()
@@ -43,7 +50,7 @@ while True:
             print("Please go to this link to report a bug " + Buglink)
 
         if help_com == ("About"):
-            print("PASSWORD MANAGER By Cody Wagner v" + version)
+            print("JelloPass By Cody Wagner " + version)
 
     if session == "open":
         pass_open = input("What is the name of the password?:\n")
