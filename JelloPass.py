@@ -16,7 +16,7 @@ try:
 except FileNotFoundError:
     key = Fernet.generate_key()
     with open(key_filename, "wb") as key_file:
-        key_file.write(key
+        key_file.write(key)
 
 cipher = Fernet(key)
 
@@ -27,14 +27,14 @@ version = ('v2.0.1')
 
 def check_updates():
     # Check the version of the script on the remote repository
-    version_url = "https://raw.githubusercontent.com/Sharkrider120/password_manager/main/version.txt"
+    version_url = "https://raw.githubusercontent.com/jelloDog-applications/jellopass/main/version.txt"
     remote_version = requests.get(version_url).text.strip()
     if remote_version != version:
         update = input(
             f"A new version {remote_version} is available. Do you want to update? (y/n): ")
         if update == 'y':
             # Download the new version of the script
-            update_url = "https://raw.githubusercontent.com/Sharkrider120/password_manager/main/password_manager.py"
+            update_url = "https://raw.githubusercontent.com/jelloDog-applications/jellopass/main/JelloPass.py"
             updated_script = requests.get(update_url).text
             with open("JelloPass.py", "w") as f:
 
