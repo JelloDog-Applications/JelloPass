@@ -16,7 +16,7 @@ try:
 except FileNotFoundError:
     key = Fernet.generate_key()
     with open(key_filename, "wb") as key_file:
-        key_file.write(key
+        key_file.write(key)
 
 cipher = Fernet(key)
 
