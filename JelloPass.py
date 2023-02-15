@@ -16,7 +16,8 @@ try:
 except FileNotFoundError:
     key = Fernet.generate_key()
     with open(key_filename, "wb") as key_file:
-        key_file.write(key)
+        key_file.write(key
+
 cipher = Fernet(key)
 
 Featurelink = ('https://tinyurl.com/y3hex46c')
@@ -36,6 +37,7 @@ def check_updates():
             update_url = "https://raw.githubusercontent.com/Sharkrider120/password_manager/main/password_manager.py"
             updated_script = requests.get(update_url).text
             with open("JelloPass.py", "w") as f:
+
                 f.write(updated_script)
             print("Update successful, please restart the script.")
             exit()
@@ -58,11 +60,13 @@ while True:
         if help_com == ("About"):
             print("JelloPass Was Made By JelloDog-Applications " + version)
 
+
     if session == "open":
         pass_open = input("What is the name of the password?:\n")
 
         # Read the encrypted password from the file
         with open(os.path.join(encrypted_folder, pass_open), "rb") as f:
+
             encrypted_password = f.read()
 
         # Decrypt the password
@@ -79,4 +83,5 @@ while True:
 
         # Write the encrypted password to a file in the encrypted folder
         with open(os.path.join(encrypted_folder, new_name), "wb") as f:
+
             f.write(encrypted_password)
