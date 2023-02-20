@@ -1,4 +1,5 @@
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/JelloDog-Applications/JelloPass?color=green) ![Discord](https://img.shields.io/discord/1075922597595857026?color=Blue&label=Discord)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/JelloDog-Applications/JelloPass?color=green) ![Discord](https://img.shields.io/discord/1075922597595857026?color=Blue&label=Discord) 
+[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/jellopass)
 
 
 
