@@ -2,6 +2,8 @@ from time import sleep
 import requests
 from cryptography.fernet import Fernet
 import os
+import pyperclip
+import win32clipboard
 
 # Create an encrypted folder for the passwords
 encrypted_folder = "encrypted"
@@ -46,7 +48,7 @@ def check_updates():
 while True:
     check_updates()
     session = input(
-        "Do you want to add a password type add or type open to open a password or type help :\n")
+        "Do you want to add a password type add or type open to open a password or type help or exit to close the program:\n")
 
     if session == "help":
         help_com = input("type About, Bug, or Feature:\n")
@@ -60,19 +62,30 @@ while True:
         if help_com == ("About"):
             print("JelloPass Was Made By JelloDog-Applications " + version)
 
+    if session == "close":
+        print("Thank you for using JelloPass")
+        sleep(0.5)
+        exit()
 
     if session == "open":
         pass_open = input("What is the name of the password?:\n")
 
+        # Validate the password file name
+        if not pass_open.isalnum():
+            print("Error: Password file name can only contain alphanumeric characters.")
+            # Handle the error appropriately, such as terminating the program or asking for a valid file name again
+    else:
         # Read the encrypted password from the file
         with open(os.path.join(encrypted_folder, pass_open), "rb") as f:
-
-            encrypted_password = f.read()
-
-        # Decrypt the password
-        password = cipher.decrypt(encrypted_password).decode()
-        print(password)
-        sleep(10)
+            print('Deleating in 10 seconds')
+            pyperclip.copy(password)
+            sleep(10)
+            win32clipboard.OpenClipboard()
+            win32clipboard.EmptyClipboard()
+            win32clipboard.CloseClipboard()
+            win32clipboard.OpenClipboard()
+            win32clipboard.SetClipboardText("")
+            win32clipboard.CloseClipboard()
 
     if session == "add":
         new_name = input("What is the name of your password?:\n")
