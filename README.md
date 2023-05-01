@@ -2,8 +2,8 @@
 
 
 
-# Security vulnerabilities (CWE-312, CWE-359, and CWE-532) have been found. Use at your own risk. Follow https://twitter.com/JelloDog_Apps for updates, and join our Discord community at https://discord.gg/UE5Rm6jn.
-
+# Security vulnerabilities CWE-359 and CWE-532 have been found. Use at your own risk. Follow https://twitter.com/JelloDog_Apps for updates, and join our Discord community at https://discord.gg/UE5Rm6jn.
+# Temp Fix has bean relased go here to download it https://github.com/JelloDog-Applications/JelloPass/releases/tag/Temp-Fix-1
 
 # JelloPass
 
