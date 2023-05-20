@@ -25,28 +25,86 @@ cipher = Fernet(key)
 
 Featurelink = 'https://tinyurl.com/y3hex46c'
 Buglink = 'https://tinyurl.com/yy4o4rgc'
-version = 'Dev_1'
+
+config = configparser.ConfigParser()
+config.read("config.ini")
+branch = config.get("General", "branch")
+
+version_file = "version.txt"
+version_url = f"https://raw.githubusercontent.com/jelloDog-applications/jellopass/{branch}/{version_file}"
+local_version = ""
+
+if os.path.exists(version_file):
+    with open(version_file, "r") as f:
+        local_version = f.read().strip()
+
+if not local_version:
+    print("Local version file not found. Retrieving the latest version from the remote repository.")
+    remote_version = requests.get(version_url).text.strip()
+    if remote_version:
+        local_version = remote_version
+        with open(version_file, "w") as f:
+            f.write(local_version)
+
+passwords_file = os.path.join(encrypted_folder, "passwords.txt")
+
+update_shown = False
 
 
 def check_updates():
-    # Check the version of the script on the remote repository
-    version_url = "https://raw.githubusercontent.com/jelloDog-applications/jellopass/main/version.txt"
+    global update_shown
+
+    if not local_version:
+        return
+
     remote_version = requests.get(version_url).text.strip()
-    if remote_version != version:
+
+    if remote_version != local_version and not update_shown:
         update = input(f"A new version {remote_version} is available. Do you want to update? (y/n): ")
         if update == 'y':
-            # Download the new version of the script
-            update_url = "https://raw.githubusercontent.com/jelloDog-applications/jellopass/main/JelloPass.py"
-            updated_script = requests.get(update_url).text
+            update_path = f"https://raw.githubusercontent.com/jelloDog-applications/jellopass/{branch}/JelloPass.py"
+            updated_script = requests.get(update_path).text
             with open("JelloPass.py", "w") as f:
                 f.write(updated_script)
             print("Update successful, please restart the script.")
             exit()
+        else:
+            update_shown = True
+
+
+def save_password(name, password):
+    with open(passwords_file, "a") as f:
+        encrypted_password = cipher.encrypt(password.encode())
+        f.write(f"{name}:{encrypted_password.decode()}\n")
+
+
+def get_password(name):
+    with open(passwords_file, "r") as f:
+        lines = f.readlines()
+        for line in lines:
+            line = line.strip()
+            if line.startswith(f"{name}:"):
+                encrypted_password = line.split(":", 1)[1]
+                password = cipher.decrypt(encrypted_password.encode()).decode()
+                return password
+        return None
+
+
+def list_passwords():
+    with open(passwords_file, "r") as f:
+        lines = f.readlines()
+        if lines:
+            print("Available passwords:")
+            for line in lines:
+                name = line.split(":", 1)[0]
+                print(name)
+        else:
+            print("No passwords found.")
 
 
 while True:
     check_updates()
-    session = input("Do you want to add a password type 'add' or type 'open' to open a password or type 'help' or 'exit' to close the program:\n")
+    session = input("Do you want to add a password (type 'add') or open a password (type 'open') or type 'help' or 'exit' to close the program:\n")
 
     if session == "help":
         help_com = input("type 'About', 'Bug', or 'Feature':\n")
@@ -58,7 +116,7 @@ while True:
             print("Please go to this link to report a bug: " + Buglink)
 
         if help_com == "About":
-            print("JelloPass Was Made By JelloDog-Applications " + version)
+            print("JelloPass Was Made By JelloDog-Applications " + local_version)
 
     if session == "close" or session == "exit":
         print("Thank you for using JelloPass")
@@ -66,36 +124,29 @@ while True:
         break
 
     if session == "open":
-        pass_open = input("What is the name of the password?:\n")
+        list_passwords()
+        pass_open = input("Enter the name of the password you want to open:\n")
 
         # Validate the password file name
         if not pass_open.isalnum():
             print("Error: Password file name can only contain alphanumeric characters.")
         else:
-            # Read the encrypted password from the file
-            with open(os.path.join(encrypted_folder, pass_open), "rb") as f:
-                encrypted_password = f.read()
-
-            # Decrypt the password
-            password = cipher.decrypt(encrypted_password).decode()
-
-            print('Deleting in 10 seconds')
-            pyperclip.copy(password)
-            sleep(10)
-            win32clipboard.OpenClipboard()
-            win32clipboard.EmptyClipboard()
-            win32clipboard.CloseClipboard()
-            win32clipboard.OpenClipboard()
-            win32clipboard.SetClipboardText("")
-            win32clipboard.CloseClipboard()
+            password = get_password(pass_open)
+            if password:
+                print('Deleting in 10 seconds')
+                pyperclip.copy(password)
+                sleep(10)
+                win32clipboard.OpenClipboard()
+                win32clipboard.EmptyClipboard()
+                win32clipboard.CloseClipboard()
+                win32clipboard.OpenClipboard()
+                win32clipboard.SetClipboardText("")
+                win32clipboard.CloseClipboard()
+            else:
+                print(f"Password '{pass_open}' not found.")
 
     if session == "add":
         new_name = input("What is the name of your password?:\n")
         password = input("Please enter the password:\n")
-
-        # Encrypt the password
-        encrypted_password = cipher.encrypt(password.encode())
-
-        # Write the encrypted password to a file in the encrypted folder
-        with open(os.path.join(encrypted_folder, new_name), "wb") as f:
-            f.write(encrypted_password)
+        save_password(new_name, password)
+        print("Password saved successfully.")
