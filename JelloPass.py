@@ -3,8 +3,8 @@ import requests
 from cryptography.fernet import Fernet
 import os
 import pyperclip
-import win32clipboard
 import configparser
+from termcolor import colored
 
 # Create an encrypted folder for the passwords
 encrypted_folder = "encrypted"
@@ -26,8 +26,15 @@ cipher = Fernet(key)
 Featurelink = 'https://tinyurl.com/y3hex46c'
 Buglink = 'https://tinyurl.com/yy4o4rgc'
 
+config_file = "config.ini"
 config = configparser.ConfigParser()
-config.read("config.ini")
+if not os.path.exists(config_file):
+    config.add_section("General")
+    config.set("General", "branch", "Stable")
+    with open(config_file, "w") as f:
+        config.write(f)
+
+config.read(config_file)
 branch = config.get("General", "branch")
 
 version_file = "version.txt"
@@ -66,6 +73,11 @@ def check_updates():
             updated_script = requests.get(update_path).text
             with open("JelloPass.py", "w") as f:
                 f.write(updated_script)
+
+            version_text = requests.get(version_url).text.strip()
+            with open(version_file, "w") as f:
+                f.write(version_text)
+
             print("Update successful, please restart the script.")
             exit()
         else:
@@ -97,17 +109,53 @@ def list_passwords():
             print("Available passwords:")
             for line in lines:
                 name = line.split(":", 1)[0]
-                print(name)
+                print("- " + name)
         else:
             print("No passwords found.")
 
 
+def change_branch():
+    global branch, local_version
+
+    branch = input("Enter the branch name (Stable, Beta, Development): ").capitalize()
+
+    if branch not in ["Stable", "Beta", "Development"]:
+        print("Invalid branch name. Please choose from 'Stable', 'Beta', or 'Development'.")
+        return
+
+    version_url = f"https://raw.githubusercontent.com/jelloDog-applications/jellopass/{branch}/{version_file}"
+
+    if os.path.exists(version_file):
+        with open(version_file, "r") as f:
+            local_version = f.read().strip()
+
+    if not local_version:
+        print("Local version file not found. Retrieving the latest version from the remote repository.")
+        remote_version = requests.get(version_url).text.strip()
+        if remote_version:
+            local_version = remote_version
+            with open(version_file, "w") as f:
+                f.write(local_version)
+
+    config.set("General", "branch", branch)
+    with open(config_file, "w") as f:
+        config.write(f)
+
+    warning_message = colored("WARNING: Switching branches may result in loss of passwords.", "red")
+    print(warning_message)
+    confirmation = input("Are you sure you want to proceed? (y/n): ")
+    if confirmation.lower() == "y":
+        print(f"Switched to the '{branch}' branch.")
+    else:
+        print("Branch switch canceled.")
+
+
 while True:
     check_updates()
-    session = input("Do you want to add a password (type 'add') or open a password (type 'open') or type 'help' or 'exit' to close the program:\n")
+    session = input("Do you want to add a password (add), open a password (open), change branch (branch), help, or exit? ")
 
     if session == "help":
-        help_com = input("type 'About', 'Bug', or 'Feature':\n")
+        help_com = input("Type 'About', 'Bug', or 'Feature': ")
 
         if help_com == "Feature":
             print("Click this link to suggest a new feature: " + Featurelink)
@@ -118,14 +166,14 @@ while True:
         if help_com == "About":
             print("JelloPass Was Made By JelloDog-Applications " + local_version)
 
-    if session == "close" or session == "exit":
+    elif session == "exit":
         print("Thank you for using JelloPass")
         sleep(0.5)
         break
 
-    if session == "open":
+    elif session == "open":
         list_passwords()
-        pass_open = input("Enter the name of the password you want to open:\n")
+        pass_open = input("Enter the name of the password you want to open: ")
 
         # Validate the password file name
         if not pass_open.isalnum():
@@ -136,17 +184,17 @@ while True:
                 print('Deleting in 10 seconds')
                 pyperclip.copy(password)
                 sleep(10)
-                win32clipboard.OpenClipboard()
-                win32clipboard.EmptyClipboard()
-                win32clipboard.CloseClipboard()
-                win32clipboard.OpenClipboard()
-                win32clipboard.SetClipboardText("")
-                win32clipboard.CloseClipboard()
             else:
                 print(f"Password '{pass_open}' not found.")
 
-    if session == "add":
-        new_name = input("What is the name of your password?:\n")
-        password = input("Please enter the password:\n")
+    elif session == "add":
+        new_name = input("What is the name of your password? ")
+        password = input("Please enter the password: ")
         save_password(new_name, password)
         print("Password saved successfully.")
+
+    elif session == "branch":
+        change_branch()
+
+    else:
+        print("Invalid command. Please try again.")
