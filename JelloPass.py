@@ -25,7 +25,7 @@ cipher = Fernet(key)
 
 Featurelink = 'https://tinyurl.com/y3hex46c'
 Buglink = 'https://tinyurl.com/yy4o4rgc'
-version = 'v2.0.1'
+version = 'Dev_1'
 
 
 def check_updates():
