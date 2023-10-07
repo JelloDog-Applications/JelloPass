@@ -23,9 +23,11 @@ except FileNotFoundError:
 
 cipher = Fernet(key)
 
+# Define URLs for feature and bug reporting
 Featurelink = 'https://tinyurl.com/y3hex46c'
 Buglink = 'https://tinyurl.com/yy4o4rgc'
 
+# Create or read the configuration file
 config_file = "config.ini"
 config = configparser.ConfigParser()
 if not os.path.exists(config_file):
@@ -37,6 +39,7 @@ if not os.path.exists(config_file):
 config.read(config_file)
 branch = config.get("General", "branch")
 
+# Define the version file and check for local version
 version_file = "version.txt"
 version_url = f"https://raw.githubusercontent.com/jelloDog-applications/jellopass/{branch}/{version_file}"
 local_version = ""
@@ -45,6 +48,7 @@ if os.path.exists(version_file):
     with open(version_file, "r") as f:
         local_version = f.read().strip()
 
+# If local version is not found, fetch it from the remote repository
 if not local_version:
     print("Local version file not found. Retrieving the latest version from the remote repository.")
     remote_version = requests.get(version_url).text.strip()
@@ -53,11 +57,12 @@ if not local_version:
         with open(version_file, "w") as f:
             f.write(local_version)
 
+# Define the passwords file path
 passwords_file = os.path.join(encrypted_folder, "passwords.txt")
 
 update_shown = False
 
-
+# Function to check for updates
 def check_updates():
     global update_shown
 
@@ -83,13 +88,13 @@ def check_updates():
         else:
             update_shown = True
 
-
+# Function to save a password
 def save_password(name, password):
     with open(passwords_file, "a") as f:
         encrypted_password = cipher.encrypt(password.encode())
         f.write(f"{name}:{encrypted_password.decode()}\n")
 
-
+# Function to retrieve a password
 def get_password(name):
     with open(passwords_file, "r") as f:
         lines = f.readlines()
@@ -101,7 +106,7 @@ def get_password(name):
                 return password
         return None
 
-
+# Function to list all saved passwords
 def list_passwords():
     with open(passwords_file, "r") as f:
         lines = f.readlines()
@@ -113,7 +118,7 @@ def list_passwords():
         else:
             print("No passwords found.")
 
-
+# Function to change the branch
 def change_branch():
     global branch, local_version
 
@@ -149,7 +154,7 @@ def change_branch():
     else:
         print("Branch switch canceled.")
 
-
+# Main loop
 while True:
     check_updates()
     session = input("Do you want to add a password (add), open a password (open), change branch (branch), help, or exit? ")
