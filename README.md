@@ -11,7 +11,7 @@ JelloPass uses the Fernet encryption method to encrypt passwords, and users can 
 
 ## Usage
 
-To use JelloPass, simply download the source code and run `JelloPass.exe`. You can add new passwords by typing `add`, retrieve existing passwords by typing `open`, and get help by typing `help`. 
+To use JelloPass, simply download and run `JelloPass.exe`. You can add new passwords by typing `add`, retrieve existing passwords by typing `open`, and get help by typing `help`. 
 
 ## Contributing
 
