@@ -81,7 +81,7 @@ def check_updates():
     remote_version = requests.get(version_url).text.strip()
 
     if remote_version != local_version and not update_shown:
-        update = input(f"A new version {remote_version} is available. Do you want to update? (y/n): ")
+        update = input(f"A new version ({remote_version}) is available. Do you want to update? (y/n): ")
         if update == 'y':
             update_path = f"https://raw.githubusercontent.com/jelloDog-applications/jellopass/{branch}/JelloPass.py"
             updated_script = requests.get(update_path).text
