@@ -7,3 +7,7 @@ encrypted/jellodog
 do not stage/main.py
 JelloPass.py
 jellopass.key
+/build
+/dist
+JelloPass.spec
+test.py

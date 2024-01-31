@@ -6,13 +6,18 @@ import pyperclip
 import configparser
 from termcolor import colored
 
+appfolder = (os.getenv('APPDATA')) + "/JelloDog-Applications"
+
+if not os.path.exists(appfolder):
+    os.makedirs(appfolder)
+
 # Create an encrypted folder for the passwords
-encrypted_folder = "encrypted"
+encrypted_folder = appfolder + "/encrypted"
 if not os.path.exists(encrypted_folder):
     os.mkdir(encrypted_folder)
 
 # Generate a new key or load an existing one
-key_filename = "jellopass.key"
+key_filename = appfolder + "/jellopass.key"
 try:
     with open(key_filename, "rb") as key_file:
         key = key_file.read()
@@ -28,7 +33,7 @@ Featurelink = 'https://tinyurl.com/y3hex46c'
 Buglink = 'https://tinyurl.com/yy4o4rgc'
 
 # Create or read the configuration file
-config_file = "config.ini"
+config_file = appfolder + "/config.ini"
 config = configparser.ConfigParser()
 if not os.path.exists(config_file):
     config.add_section("General")
@@ -44,8 +49,12 @@ version_file = "version.txt"
 version_url = f"https://raw.githubusercontent.com/jelloDog-applications/jellopass/{branch}/{version_file}"
 local_version = ""
 
-if os.path.exists(version_file):
-    with open(version_file, "r") as f:
+# Use the absolute path to the version file
+version_file_path = os.path.join(os.path.dirname(__file__), version_file)
+
+# Check for local version
+if os.path.exists(version_file_path):
+    with open(version_file_path, "r") as f:
         local_version = f.read().strip()
 
 # If local version is not found, fetch it from the remote repository
@@ -58,7 +67,7 @@ if not local_version:
             f.write(local_version)
 
 # Define the passwords file path
-passwords_file = os.path.join(encrypted_folder, "passwords.txt")
+passwords_file = os.path.join(encrypted_folder, "passwords.JelloPass")
 
 update_shown = False
 
@@ -72,7 +81,7 @@ def check_updates():
     remote_version = requests.get(version_url).text.strip()
 
     if remote_version != local_version and not update_shown:
-        update = input(f"A new version {remote_version} is available. Do you want to update? (y/n): ")
+        update = input(f"A new version ({remote_version}) is available. Do you want to update? (y/n): ")
         if update == 'y':
             update_path = f"https://raw.githubusercontent.com/jelloDog-applications/jellopass/{branch}/JelloPass.py"
             updated_script = requests.get(update_path).text
