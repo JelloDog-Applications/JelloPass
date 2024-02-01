@@ -2,8 +2,6 @@
 
 
 
-# Security vulnerabilities CWE-359 and CWE-532 have been found. Use at your own risk. Follow https://twitter.com/JelloDog_Apps for updates, and join our Discord community at https://discord.gg/UE5Rm6jn.
-# Temp Fix has bean relased go here to download it https://github.com/JelloDog-Applications/JelloPass/releases/tag/Temp-Fix-1
 
 # JelloPass
 
@@ -13,7 +11,7 @@ JelloPass uses the Fernet encryption method to encrypt passwords, and users can 
 
 ## Usage
 
-To use JelloPass, simply download the source code and run `JelloPass.py`. You can add new passwords by typing `add`, retrieve existing passwords by typing `open`, and get help by typing `help`. 
+To use JelloPass, simply download and run `JelloPass.exe`. You can add new passwords by typing `add`, retrieve existing passwords by typing `open`, and get help by typing `help`. 
 
 ## Contributing
 
