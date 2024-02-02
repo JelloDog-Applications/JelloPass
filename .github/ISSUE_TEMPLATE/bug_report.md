@@ -1,6 +1,7 @@
 ---
 name: Bug report
 about: Create a report to help us improve
+project: 'JelloPass
 title: ''
 labels: bug
 assignees: Sharkrider120
