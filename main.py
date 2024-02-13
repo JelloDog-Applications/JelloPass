@@ -17,7 +17,7 @@ if not os.path.exists(appfolder):
 # Create an encrypted folder for the passwords
 encrypted_folder = appfolder + "/encrypted"
 if not os.path.exists(encrypted_folder):
-    os.mkdir(encrypted_folder)
+    os.makedirs(encrypted_folder)
 
 # Generate a new key or load an existing one
 key_filename = appfolder + "/jellopass.key"
