@@ -6,6 +6,7 @@ import pyperclip
 import configparser
 from termcolor import colored
 import re
+import sys
 
 filename_pattern = re.compile(r'^[\w-]+$')
 
@@ -74,9 +75,11 @@ passwords_file = os.path.join(encrypted_folder, "passwords.JelloPass")
 
 update_shown = False
 
+import urllib.request
+
 # Function to check for updates
 def check_updates():
-    global update_shown
+    global update_shown, local_version
 
     if not local_version:
         return
@@ -86,17 +89,16 @@ def check_updates():
     if remote_version != local_version and not update_shown:
         update = input(f"A new version ({remote_version}) is available. Do you want to update? (y/n): ")
         if update == 'y':
-            update_path = f"https://raw.githubusercontent.com/jelloDog-applications/jellopass/{branch}/JelloPass.py"
-            updated_script = requests.get(update_path).text
-            with open("JelloPass.py", "w") as f:
-                f.write(updated_script)
+            update_path = "https://github.com/JelloDog-Applications/JelloPass/releases/latest/download/JelloPass.exe"
+            urllib.request.urlretrieve(update_path, "JelloPass-Installer.exe")
 
             version_text = requests.get(version_url).text.strip()
             with open(version_file, "w") as f:
                 f.write(version_text)
 
-            print("Update successful, please restart the script.")
-            exit()
+            print("Download complete. Please run the installer to update JelloPass.")
+            sleep(2)
+            sys.exit()
         else:
             update_shown = True
 

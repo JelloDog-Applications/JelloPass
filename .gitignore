@@ -16,3 +16,8 @@ Setup-exe/JelloPass.iss
 Setup-exe/JelloPass.exe
 snyk.exe
 .dccache
+/Setup-exe
+output/JelloPass-Installer.exe
+JelloPass-Installer.exe
+output/JelloPass.exe
+output/version.txt
