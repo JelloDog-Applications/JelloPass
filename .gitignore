@@ -11,3 +11,6 @@ jellopass.key
 /dist
 JelloPass.spec
 test.py
+Setup-exe/JelloPass.iss
+
+Setup-exe/JelloPass.exe

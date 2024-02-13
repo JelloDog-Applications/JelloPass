@@ -5,6 +5,9 @@ import os
 import pyperclip
 import configparser
 from termcolor import colored
+import re
+
+filename_pattern = re.compile(r'^[\w-]+$')
 
 appfolder = (os.getenv('APPDATA')) + "/JelloDog-Applications"
 
@@ -200,12 +203,18 @@ while True:
                 sleep(10)
             else:
                 print(f"Password '{pass_open}' not found.")
+                
 
     elif session == "add":
         new_name = input("What is the name of your password? ")
-        password = input("Please enter the password: ")
-        save_password(new_name, password)
-        print("Password saved successfully.")
+                    # Validate the password file name
+        if not new_name.isalnum():
+            print("Error: Password file name can only contain alphanumeric characters.")
+        else:
+            password = input("Please enter the password: ")
+            save_password(new_name, password)
+            print("Password saved successfully.")
+
 
     elif session == "branch":
         change_branch()
