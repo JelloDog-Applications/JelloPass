@@ -16,3 +16,4 @@ Setup-exe/JelloPass.iss
 Setup-exe/JelloPass.exe
 snyk.exe
 .dccache
+/Setup-exe
