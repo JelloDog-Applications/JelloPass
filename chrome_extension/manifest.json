@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "JelloPass",
+  "version": "1.0",
+  "description": "Fill and copy passwords from JelloPass. Keep the JelloPass app (GUI) open.",
+  "permissions": [
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:47984/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "JelloPass"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -13,6 +13,30 @@ JelloPass uses the Fernet encryption method to encrypt passwords, and users can 
 
 To use JelloPass, simply download and run `JelloPass.exe`. You can add new passwords by typing `add`, retrieve existing passwords by typing `open`, and get help by typing `help`. 
 
+## Phone Sync (Self-Hosted API)
+
+This repo now includes a minimal sync backend in `sync_server.py`.
+
+1. Start the sync server on your desktop:
+```powershell
+python sync_server.py
+```
+
+2. In JelloPass CLI, set up sync:
+- `lock` (required so the key file is master-password protected)
+- `sync-register`
+- `sync-login`
+- `sync-push`
+
+3. On your phone app/client (or another desktop), use the same sync account and call:
+- `sync-login`
+- `sync-pull`
+
+Notes:
+- Server stores only encrypted vault and encrypted key blobs.
+- Sync uses optimistic versioning; if `sync-push` reports conflict, run `sync-pull` then push again.
+- Default server URL is `http://<desktop-ip>:8091` for LAN use.
+
 ## Contributing
 
 If you'd like to contribute to JelloPass, feel free to submit a pull request. 
