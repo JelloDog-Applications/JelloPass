@@ -777,6 +777,15 @@ def _run_jellopass_server():
     from http.server import HTTPServer, BaseHTTPRequestHandler
 
     class JelloPassHandler(BaseHTTPRequestHandler):
+        def _sanitize_header_value(self, value):
+            """
+            Remove characters that could be used for HTTP response splitting from a header value.
+            """
+            if not isinstance(value, str):
+                value = str(value)
+            # Strip CR and LF to prevent header injection / response splitting.
+            return value.replace("\r", "").replace("\n", "")
+
         def _origin_allowed(self):
             origin = self.headers.get("Origin", "")
             if not origin:
@@ -794,16 +803,10 @@ def _run_jellopass_server():
                 self.wfile.write(json.dumps({"error": "forbidden"}).encode("utf-8"))
                 return
             origin = self.headers.get("Origin", "")
-            # Ensure the reflected Origin header cannot perform HTTP response splitting
-            if "\r" in origin or "\n" in origin:
-                self.send_response(400)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": "invalid origin"}).encode("utf-8"))
-                return
+            safe_origin = self._sanitize_header_value(origin)
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Access-Control-Allow-Origin", safe_origin)
             self.send_header("Vary", "Origin")
             self.end_headers()
             self.wfile.write(json.dumps(obj).encode("utf-8"))
@@ -844,13 +847,9 @@ def _run_jellopass_server():
                 self.end_headers()
                 return
             origin = self.headers.get("Origin", "")
-            # Ensure the reflected Origin header cannot perform HTTP response splitting
-            if "\r" in origin or "\n" in origin:
-                self.send_response(400)
-                self.end_headers()
-                return
+            safe_origin = self._sanitize_header_value(origin)
             self.send_response(204)
-            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Access-Control-Allow-Origin", safe_origin)
             self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
