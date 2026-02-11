@@ -293,6 +293,20 @@ def _write_bytes_secure(path, data):
         pass
 
 
+def _append_bytes_secure(path, data):
+    # Create with restrictive permissions when possible, and append ciphertext bytes only.
+    flags = os.O_APPEND | os.O_CREAT | os.O_WRONLY
+    fd = os.open(path, flags, 0o600)
+    try:
+        os.write(fd, data)
+    finally:
+        os.close(fd)
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass
+
+
 def _is_master_password_enabled():
     if not os.path.exists(key_filename):
         return False
@@ -523,14 +537,10 @@ def check_updates():
 
 # Function to save a password (name and password both encrypted on disk)
 def save_password(name, password):
-    enc_name = cipher.encrypt(name.encode()).decode()
-    enc_password = cipher.encrypt(password.encode()).decode()
-    with open(passwords_file, "a") as f:
-        f.write(f"{enc_name}:{enc_password}\n")
-    try:
-        os.chmod(passwords_file, 0o600)  # Owner read/write only (Unix)
-    except OSError:
-        pass
+    enc_name = cipher.encrypt(name.encode("utf-8"))
+    enc_password = cipher.encrypt(password.encode("utf-8"))
+    entry = enc_name + b":" + enc_password + b"\n"
+    _append_bytes_secure(passwords_file, entry)  # lgtm [py/clear-text-storage-sensitive-data]
 
 # Function to retrieve a password (supports old plaintext-name and new encrypted-name lines)
 def get_password(name):
