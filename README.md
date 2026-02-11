@@ -13,6 +13,17 @@ JelloPass uses the Fernet encryption method to encrypt passwords, and users can 
 
 To use JelloPass, simply download and run `JelloPass.exe`. You can add new passwords by typing `add`, retrieve existing passwords by typing `open`, and get help by typing `help`. 
 
+Linux:
+1. Install dependencies:
+```bash
+python3 -m pip install -r requirements.txt
+```
+2. Run:
+```bash
+python3 main.py
+```
+3. Clipboard support on Linux may require `xclip` or `xsel`.
+
 ## Phone Sync (Self-Hosted API)
 
 This repo now includes a minimal sync backend in `sync_server.py`.

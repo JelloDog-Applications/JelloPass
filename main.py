@@ -24,15 +24,21 @@ SYNC_TOKEN_MAGIC = "enc:"
 
 filename_pattern = re.compile(r'^[\w-]+$')
 
-appfolder = (os.getenv('APPDATA')) + "/JelloDog-Applications"
+def _resolve_appfolder():
+    if sys.platform == "win32":
+        base = os.getenv("APPDATA") or os.path.expanduser("~\\AppData\\Roaming")
+    elif sys.platform == "darwin":
+        base = os.path.expanduser("~/Library/Application Support")
+    else:
+        base = os.getenv("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+    return os.path.join(base, "JelloDog-Applications")
 
-if not os.path.exists(appfolder):
-    os.makedirs(appfolder)
+appfolder = _resolve_appfolder()
+os.makedirs(appfolder, exist_ok=True)
 
 # Create an encrypted folder for the passwords
-encrypted_folder = appfolder + "/encrypted"
-if not os.path.exists(encrypted_folder):
-    os.makedirs(encrypted_folder)
+encrypted_folder = os.path.join(appfolder, "encrypted")
+os.makedirs(encrypted_folder, exist_ok=True)
 
 # Master password: derive a Fernet key from password + salt
 def _derive_fernet_key(password: bytes, salt: bytes) -> bytes:
@@ -55,7 +61,7 @@ def _load_or_create_key(password_prompt=None, choice_prompt=None):
             return input(msg).strip().lower()
         choice_prompt = _input_choice
 
-    key_filename_local = appfolder + "/jellopass.key"
+    key_filename_local = os.path.join(appfolder, "jellopass.key")
     if not os.path.exists(key_filename_local):
         # New install: generate key and optionally protect with master password
         key = Fernet.generate_key()
@@ -120,7 +126,7 @@ def _load_or_create_key(password_prompt=None, choice_prompt=None):
         return data
 
 
-key_filename = appfolder + "/jellopass.key"
+key_filename = os.path.join(appfolder, "jellopass.key")
 key = None
 cipher = None
 
@@ -137,7 +143,7 @@ Featurelink = 'https://tinyurl.com/y3hex46c'
 Buglink = 'https://tinyurl.com/yy4o4rgc'
 
 # Create or read the configuration file
-config_file = appfolder + "/config.ini"
+config_file = os.path.join(appfolder, "config.ini")
 config = configparser.ConfigParser()
 if not os.path.exists(config_file):
     config.add_section("General")
@@ -305,6 +311,14 @@ def _append_bytes_secure(path, data):
         os.chmod(path, 0o600)
     except OSError:
         pass
+
+
+def _copy_to_clipboard(text):
+    try:
+        pyperclip.copy(text)
+        return True
+    except pyperclip.PyperclipException:
+        return False
 
 
 def _is_master_password_enabled():
@@ -522,16 +536,19 @@ def check_updates():
     if remote_version != local_version and not update_shown:
         update = input(f"A new version ({remote_version}) is available. Do you want to update? (y/n): ")
         if update == 'y':
-            update_path = "https://github.com/JelloDog-Applications/JelloPass/releases/latest/download/JelloPass.exe"
-            urllib.request.urlretrieve(update_path, "JelloPass-Installer.exe")
+            if sys.platform == "win32":
+                update_path = "https://github.com/JelloDog-Applications/JelloPass/releases/latest/download/JelloPass.exe"
+                urllib.request.urlretrieve(update_path, "JelloPass-Installer.exe")
 
-            version_text = requests.get(version_url).text.strip()
-            with open(version_file, "w") as f:
-                f.write(version_text)
+                version_text = requests.get(version_url).text.strip()
+                with open(version_file, "w") as f:
+                    f.write(version_text)
 
-            print("Download complete. Please run the installer to update JelloPass.")
-            sleep(2)
-            sys.exit()
+                print("Download complete. Please run the installer to update JelloPass.")
+                sleep(2)
+                sys.exit()
+            else:
+                print("Auto-update installer is Windows-only. Download the latest Linux build/package manually.")
         else:
             update_shown = True
 
@@ -767,10 +784,12 @@ def run_cli():
             else:
                 password = get_password(pass_open)
                 if password:
+                    if not _copy_to_clipboard(password):
+                        print("Clipboard unavailable. Install xclip or xsel on Linux.")
+                        continue
                     print("Password copied. Clipboard will clear in 10 seconds.")
-                    pyperclip.copy(password)
                     sleep(10)
-                    pyperclip.copy("")  # Clear clipboard for security
+                    _copy_to_clipboard("")  # Clear clipboard for security
                     print("Clipboard cleared.")
                 else:
                     print(f"Password '{pass_open}' not found.")
@@ -1075,7 +1094,12 @@ def run_gui():
             pwd_entry.configure(state="disabled")
         btn_frame = ctk.CTkFrame(dlg, fg_color="transparent")
         btn_frame.pack(pady=(4, 20))
-        ctk.CTkButton(btn_frame, text="Copy", command=lambda: (pyperclip.copy(pwd), messagebox.showinfo("JelloPass", "Copied.", parent=dlg)), width=90, height=32, corner_radius=8).pack(side=tk.LEFT, padx=6)
+        def on_copy_dialog():
+            if _copy_to_clipboard(pwd):
+                messagebox.showinfo("JelloPass", "Copied.", parent=dlg)
+            else:
+                messagebox.showerror("JelloPass", "Clipboard unavailable. Install xclip or xsel on Linux.", parent=dlg)
+        ctk.CTkButton(btn_frame, text="Copy", command=on_copy_dialog, width=90, height=32, corner_radius=8).pack(side=tk.LEFT, padx=6)
         ctk.CTkButton(btn_frame, text="Close", command=dlg.destroy, width=90, height=32, corner_radius=8, fg_color=("#8a8a8a", "#4a4a4a")).pack(side=tk.LEFT, padx=6)
         dlg.geometry("+%d+%d" % (root.winfo_rootx() + 30, root.winfo_rooty() + 80))
 
@@ -1090,11 +1114,13 @@ def run_gui():
             messagebox.showerror("JelloPass", "Password not found.", parent=root)
             return
         name, pwd = entry
-        pyperclip.copy(pwd)
+        if not _copy_to_clipboard(pwd):
+            messagebox.showerror("JelloPass", "Clipboard unavailable. Install xclip or xsel on Linux.", parent=root)
+            return
         messagebox.showinfo("JelloPass", "Password copied. Clipboard will clear in 10 seconds.", parent=root)
         def clear_later():
             sleep(10)
-            pyperclip.copy("")
+            _copy_to_clipboard("")
             try:
                 root.event_generate("<<ClipboardCleared>>")
             except tk.TclError:
@@ -1382,11 +1408,11 @@ def run_gui():
 
     def on_open_cli():
         try:
-            creation_flags = getattr(subprocess, "CREATE_NEW_CONSOLE", 0)
-            subprocess.Popen(
-                [sys.executable, os.path.abspath(__file__), "--cli"],
-                creationflags=creation_flags,
-            )
+            cmd = [sys.executable, os.path.abspath(__file__), "--cli"]
+            kwargs = {}
+            if sys.platform == "win32":
+                kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_CONSOLE", 0)
+            subprocess.Popen(cmd, **kwargs)
             messagebox.showinfo("JelloPass", "CLI opened in a new window.", parent=root)
         except Exception as e:
             messagebox.showerror("JelloPass", f"Failed to open CLI: {e}", parent=root)
