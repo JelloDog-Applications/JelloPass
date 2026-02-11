@@ -793,9 +793,17 @@ def _run_jellopass_server():
                 self.end_headers()
                 self.wfile.write(json.dumps({"error": "forbidden"}).encode("utf-8"))
                 return
+            origin = self.headers.get("Origin", "")
+            # Ensure the reflected Origin header cannot perform HTTP response splitting
+            if "\r" in origin or "\n" in origin:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "invalid origin"}).encode("utf-8"))
+                return
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin"))
+            self.send_header("Access-Control-Allow-Origin", origin)
             self.send_header("Vary", "Origin")
             self.end_headers()
             self.wfile.write(json.dumps(obj).encode("utf-8"))
@@ -835,8 +843,14 @@ def _run_jellopass_server():
                 self.send_response(403)
                 self.end_headers()
                 return
+            origin = self.headers.get("Origin", "")
+            # Ensure the reflected Origin header cannot perform HTTP response splitting
+            if "\r" in origin or "\n" in origin:
+                self.send_response(400)
+                self.end_headers()
+                return
             self.send_response(204)
-            self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin"))
+            self.send_header("Access-Control-Allow-Origin", origin)
             self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
