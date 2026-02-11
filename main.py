@@ -13,6 +13,7 @@ import subprocess
 from termcolor import colored
 import re
 import sys
+from urllib.parse import urlparse
 
 # Master password: key file format "JP1" + 16-byte salt + Fernet-encrypted data key
 MASTER_KEY_MAGIC = b"JP1"
@@ -224,6 +225,23 @@ def _sync_headers(token):
     return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
 
+def _validate_sync_server_url(raw_url):
+    value = (raw_url or "").strip().rstrip("/")
+    if not value:
+        return None, "Server URL is required."
+    try:
+        parsed = urlparse(value)
+    except Exception:
+        return None, "Invalid server URL."
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        return None, "Server URL must start with http:// or https://"
+    host = (parsed.hostname or "").lower()
+    is_local = host in {"127.0.0.1", "localhost"}
+    if parsed.scheme != "https" and not is_local:
+        return None, "Use https:// for non-local sync servers."
+    return value, None
+
+
 def _read_bytes_if_exists(path):
     if not os.path.exists(path):
         return b""
@@ -250,9 +268,10 @@ def _is_master_password_enabled():
 
 def sync_register():
     settings = _sync_get_settings()
-    server_url = input("Sync server URL (example: http://127.0.0.1:8091): ").strip().rstrip("/")
-    if not server_url:
-        print("Server URL is required.")
+    server_url_raw = input("Sync server URL (example: http://127.0.0.1:8091): ")
+    server_url, url_error = _validate_sync_server_url(server_url_raw)
+    if url_error:
+        print(url_error)
         return
     username = input("Sync username: ").strip()
     if not username:
@@ -290,9 +309,10 @@ def sync_register():
 
 def sync_login():
     settings = _sync_get_settings()
-    server_url = input(f"Sync server URL [{settings['server_url']}]: ").strip().rstrip("/") or settings["server_url"]
-    if not server_url:
-        print("Server URL is required.")
+    server_url_raw = input(f"Sync server URL [{settings['server_url']}]: ").strip() or settings["server_url"]
+    server_url, url_error = _validate_sync_server_url(server_url_raw)
+    if url_error:
+        print(url_error)
         return
     username = input(f"Sync username [{settings['username']}]: ").strip() or settings["username"]
     if not username:
@@ -757,13 +777,26 @@ def _run_jellopass_server():
     from http.server import HTTPServer, BaseHTTPRequestHandler
 
     class JelloPassHandler(BaseHTTPRequestHandler):
+        def _origin_allowed(self):
+            origin = self.headers.get("Origin", "")
+            if not origin:
+                return False
+            return origin.startswith("chrome-extension://")
+
         def log_message(self, format, *args):
             pass  # quiet
 
         def _send_json(self, obj, status=200):
+            if not self._origin_allowed():
+                self.send_response(403)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "forbidden"}).encode("utf-8"))
+                return
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin"))
+            self.send_header("Vary", "Origin")
             self.end_headers()
             self.wfile.write(json.dumps(obj).encode("utf-8"))
 
@@ -798,8 +831,13 @@ def _run_jellopass_server():
                 self._send_json({"error": str(e)}, 500)
 
         def do_OPTIONS(self):
+            if not self._origin_allowed():
+                self.send_response(403)
+                self.end_headers()
+                return
             self.send_response(204)
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Origin", self.headers.get("Origin"))
+            self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.end_headers()
@@ -1052,12 +1090,12 @@ def run_gui():
 
     def on_sync_register():
         settings = _sync_get_settings()
-        server_url = _ask_text("Sync server URL:", settings["server_url"] or "http://127.0.0.1:8091")
-        if server_url is None:
+        server_url_raw = _ask_text("Sync server URL:", settings["server_url"] or "http://127.0.0.1:8091")
+        if server_url_raw is None:
             return
-        server_url = server_url.strip().rstrip("/")
-        if not server_url:
-            messagebox.showerror("JelloPass", "Server URL is required.", parent=root)
+        server_url, url_error = _validate_sync_server_url(server_url_raw)
+        if url_error:
+            messagebox.showerror("JelloPass", url_error, parent=root)
             return
         username = _ask_text("Sync username:", settings["username"])
         if username is None:
@@ -1099,12 +1137,12 @@ def run_gui():
 
     def on_sync_login():
         settings = _sync_get_settings()
-        server_url = _ask_text("Sync server URL:", settings["server_url"] or "http://127.0.0.1:8091")
-        if server_url is None:
+        server_url_raw = _ask_text("Sync server URL:", settings["server_url"] or "http://127.0.0.1:8091")
+        if server_url_raw is None:
             return
-        server_url = server_url.strip().rstrip("/")
-        if not server_url:
-            messagebox.showerror("JelloPass", "Server URL is required.", parent=root)
+        server_url, url_error = _validate_sync_server_url(server_url_raw)
+        if url_error:
+            messagebox.showerror("JelloPass", url_error, parent=root)
             return
         username = _ask_text("Sync username:", settings["username"])
         if username is None:

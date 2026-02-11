@@ -6,14 +6,17 @@ import os
 import secrets
 import sqlite3
 import time
+import re
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
 DB_PATH = os.getenv("JELLOPASS_SYNC_DB", "jellopass_sync.db")
-HOST = os.getenv("JELLOPASS_SYNC_HOST", "0.0.0.0")
+HOST = os.getenv("JELLOPASS_SYNC_HOST", "127.0.0.1")
 PORT = int(os.getenv("JELLOPASS_SYNC_PORT", "8091"))
 TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30
 PBKDF2_ITERATIONS = 600_000
+MAX_JSON_BODY_BYTES = 1_000_000
+USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_.-]{3,64}$")
 
 
 def init_db():
@@ -74,7 +77,7 @@ def parse_json_body(handler):
         length = int(handler.headers.get("Content-Length", "0"))
     except ValueError:
         return None
-    if length <= 0:
+    if length <= 0 or length > MAX_JSON_BODY_BYTES:
         return None
     raw = handler.rfile.read(length)
     try:
@@ -131,9 +134,6 @@ class SyncHandler(BaseHTTPRequestHandler):
     def _send_json(self, status, payload):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
         self.end_headers()
         self.wfile.write(json.dumps(payload).encode("utf-8"))
 
@@ -164,8 +164,8 @@ class SyncHandler(BaseHTTPRequestHandler):
             return
         username = str(body.get("username", "")).strip()
         password = str(body.get("password", ""))
-        if not username or len(username) < 3:
-            self._send_json(400, {"error": "username must be at least 3 characters"})
+        if not USERNAME_PATTERN.fullmatch(username):
+            self._send_json(400, {"error": "username must be 3-64 chars: letters, numbers, _, -, ."})
             return
         if len(password) < 8:
             self._send_json(400, {"error": "password must be at least 8 characters"})
@@ -194,6 +194,9 @@ class SyncHandler(BaseHTTPRequestHandler):
             return
         username = str(body.get("username", "")).strip()
         password = str(body.get("password", ""))
+        if not USERNAME_PATTERN.fullmatch(username):
+            self._send_json(401, {"error": "invalid credentials"})
+            return
         conn = get_db_connection()
         try:
             row = conn.execute(
@@ -270,9 +273,9 @@ class SyncHandler(BaseHTTPRequestHandler):
             self._send_json(400, {"error": "key_data_b64 is required"})
             return
         try:
-            base64.b64decode(key_data_b64.encode("ascii"))
+            base64.b64decode(key_data_b64.encode("ascii"), validate=True)
             if vault_data_b64:
-                base64.b64decode(vault_data_b64.encode("ascii"))
+                base64.b64decode(vault_data_b64.encode("ascii"), validate=True)
         except Exception:
             self._send_json(400, {"error": "payload is not valid base64"})
             return
