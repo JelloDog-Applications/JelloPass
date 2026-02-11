@@ -12,7 +12,7 @@ jellopass.key
 JelloPass.spec
 test.py
 Setup-exe/JelloPass.iss
-
+output/
 Setup-exe/JelloPass.exe
 snyk.exe
 .dccache
