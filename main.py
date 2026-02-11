@@ -20,6 +20,7 @@ MASTER_KEY_MAGIC = b"JP1"
 SALT_LEN = 16
 KDF_ITERATIONS = 600_000  # OWASP-recommended for PBKDF2-SHA256
 SYNC_TIMEOUT_SECONDS = 15
+SYNC_TOKEN_MAGIC = "enc:"
 
 filename_pattern = re.compile(r'^[\w-]+$')
 
@@ -129,6 +130,7 @@ def init_vault(password_prompt=None, choice_prompt=None):
     global key, cipher
     key = _load_or_create_key(password_prompt=password_prompt, choice_prompt=choice_prompt)
     cipher = Fernet(key)
+    _migrate_sync_token_to_encrypted()
 
 # Define URLs for feature and bug reporting
 Featurelink = 'https://tinyurl.com/y3hex46c'
@@ -201,10 +203,11 @@ def _save_config():
 
 
 def _sync_get_settings():
+    token_stored = config.get("Sync", "token").strip()
     return {
         "server_url": config.get("Sync", "server_url").strip().rstrip("/"),
         "username": config.get("Sync", "username").strip(),
-        "token": config.get("Sync", "token").strip(),
+        "token": _decrypt_sync_token(token_stored),
         "vault_version": config.getint("Sync", "vault_version", fallback=0),
     }
 
@@ -215,7 +218,7 @@ def _sync_set_settings(server_url=None, username=None, token=None, vault_version
     if username is not None:
         config.set("Sync", "username", username.strip())
     if token is not None:
-        config.set("Sync", "token", token.strip())
+        config.set("Sync", "token", _encrypt_sync_token(token.strip()))
     if vault_version is not None:
         config.set("Sync", "vault_version", str(int(vault_version)))
     _save_config()
@@ -223,6 +226,38 @@ def _sync_set_settings(server_url=None, username=None, token=None, vault_version
 
 def _sync_headers(token):
     return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+
+def _encrypt_sync_token(token):
+    if not token:
+        return ""
+    if cipher is None:
+        return token
+    return SYNC_TOKEN_MAGIC + cipher.encrypt(token.encode("utf-8")).decode("utf-8")
+
+
+def _decrypt_sync_token(token_value):
+    if not token_value:
+        return ""
+    if not token_value.startswith(SYNC_TOKEN_MAGIC):
+        return token_value
+    if cipher is None:
+        return ""
+    encrypted = token_value[len(SYNC_TOKEN_MAGIC):]
+    try:
+        return cipher.decrypt(encrypted.encode("utf-8")).decode("utf-8")
+    except InvalidToken:
+        return ""
+
+
+def _migrate_sync_token_to_encrypted():
+    if cipher is None or not config.has_section("Sync"):
+        return
+    token_value = config.get("Sync", "token", fallback="").strip()
+    if not token_value or token_value.startswith(SYNC_TOKEN_MAGIC):
+        return
+    config.set("Sync", "token", _encrypt_sync_token(token_value))
+    _save_config()
 
 
 def _validate_sync_server_url(raw_url):

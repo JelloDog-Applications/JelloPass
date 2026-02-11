@@ -72,6 +72,10 @@ def hash_password(password, salt):
     return base64.b64encode(digest).decode("ascii")
 
 
+def hash_session_token(token):
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
 def parse_json_body(handler):
     try:
         length = int(handler.headers.get("Content-Length", "0"))
@@ -92,11 +96,12 @@ def get_db_connection():
 
 def create_session(conn, user_id):
     token = secrets.token_urlsafe(32)
+    token_hash = hash_session_token(token)
     now = int(time.time())
     expires_at = now + TOKEN_TTL_SECONDS
     conn.execute(
         "INSERT OR REPLACE INTO sessions(token, user_id, expires_at, created_at) VALUES(?, ?, ?, ?)",
-        (token, user_id, expires_at, now),
+        (token_hash, user_id, expires_at, now),
     )
     conn.commit()
     return token
@@ -108,18 +113,19 @@ def resolve_user_id_from_auth(header_value):
     token = header_value.split(" ", 1)[1].strip()
     if not token:
         return None
+    token_hash = hash_session_token(token)
     now = int(time.time())
     conn = get_db_connection()
     try:
         row = conn.execute(
             "SELECT user_id, expires_at FROM sessions WHERE token = ?",
-            (token,),
+            (token_hash,),
         ).fetchone()
         if not row:
             return None
         user_id, expires_at = row
         if expires_at < now:
-            conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
+            conn.execute("DELETE FROM sessions WHERE token = ?", (token_hash,))
             conn.commit()
             return None
         return user_id
